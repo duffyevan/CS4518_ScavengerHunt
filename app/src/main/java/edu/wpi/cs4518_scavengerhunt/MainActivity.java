@@ -10,6 +10,8 @@ import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     String imagePath;
 
     public String currentInference = "Nothing Yet";
+    private HuntHelper helper;
+    private int score = 0, skips = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +34,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         offDeviceHelper = new MLOffDeviceHelper(this);
         Log.d("Random Item:", offDeviceHelper.labels[(int) (Math.random() * 1000)]);
-        takePictureAndStartInference();
+        //takePictureAndStartInference();
+        helper = new HuntHelper(this);
+        helper.huntList();
+
+        nextItem();
     }
 
 
@@ -42,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Function to take picture with the device camera, the camera returning will kick off the inference
      */
-    public void takePictureAndStartInference() {
+    public void takePictureAndStartInference(View v) {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         File picturesFolder = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
@@ -87,9 +95,44 @@ public class MainActivity extends AppCompatActivity {
      * @param answer The string name for the identified object.
      */
     public void comeBackWithInferenceAnswer(String answer) {
-        // TODO Yo Ben Do Your Thing Here! :)
+        // TODO Get updating score to NOT crash
         Log.d("Here Be The Answer!", answer);
+        //TextView picOf = findViewById(R.id.textPicOf);
+        //picOf.setText("Pic seen as:\n" + answer);
+        if (answer.equals(curItem)){
+            score += 100;
+            nextItem();
+            }
+        else {
+            score -= 50;
+            updateScore();
+            nextItem();
+         }
     }
 
+    private String curItem;
+
+    public void updateScore(){
+        TextView scoreText = findViewById(R.id.scoreText);
+        scoreText.setText("SCORE:" + score);
+
+    }
+    public void nextItem(View v){
+        nextItem();
+    }
+
+    public void nextItem(){
+        updateScore();
+        TextView curHunt = findViewById(R.id.curItem);
+        curItem = helper.newHuntItem();
+        curHunt.setText("Current Item:\n" + curItem);
+
+    }
+
+    public void addToImpossible(View v){
+        helper.addToImp(curItem);
+        nextItem();
+
+    }
 
 }
