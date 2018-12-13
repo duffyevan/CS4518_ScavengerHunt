@@ -1,6 +1,7 @@
 package edu.wpi.cs4518_scavengerhunt;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import org.tensorflow.lite.Interpreter;
 
@@ -89,5 +90,8 @@ public abstract class MLHelper {
         imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
     }
 
+    public Bitmap getBitmapFromFilePath(String filePath) throws IOException {
+        return Bitmap.createScaledBitmap(BitmapFactory.decodeStream(mainActivity.getAssets().open(filePath)), this.SIZE_X, this.SIZE_Y, true);
+    }
 
 }

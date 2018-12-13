@@ -1,7 +1,6 @@
 package edu.wpi.cs4518_scavengerhunt;
 
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.os.SystemClock;
 
 import com.squareup.okhttp.MediaType;

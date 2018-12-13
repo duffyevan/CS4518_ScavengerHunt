@@ -2,8 +2,6 @@ package edu.wpi.cs4518_scavengerhunt;
 
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.SystemClock;
 
 import org.tensorflow.lite.Interpreter;
 
@@ -38,7 +36,6 @@ public class MLOnDeviceHelper extends MLHelper {
         Runnable runClassification = new Runnable() {
             @Override
             public void run() {
-                final long startTime = SystemClock.uptimeMillis();
 
                 imgData = ByteBuffer.allocateDirect(
                         SIZE_X
@@ -51,19 +48,13 @@ public class MLOnDeviceHelper extends MLHelper {
 
                 final float[][] imageProbArray = new float[1][1001];
                 tflite.run(imgData, imageProbArray);
-
                 final int highestIndex = findHighestElement(imageProbArray[0]);
 
-                final long endTime = SystemClock.uptimeMillis();
+//                Log.i("RESULT!!!!",
+//                        ("" + labels[highestIndex] + ": " + ((float) Math.round(imageProbArray[0][highestIndex] * 10000)) / 100 + "%"));
 
-                Handler mainHandler = new Handler(mainActivity.getApplicationContext().getMainLooper());
-                Runnable updateFields = new Runnable() {
-                    @Override
-                    public void run() {
-                    }
-                };
-                mainHandler.post(updateFields);
-
+                mainActivity.currentInference = labels[highestIndex];
+                mainActivity.comeBackWithInferenceAnswer(mainActivity.currentInference);
             }
         };
         (new Thread(runClassification)).start();
