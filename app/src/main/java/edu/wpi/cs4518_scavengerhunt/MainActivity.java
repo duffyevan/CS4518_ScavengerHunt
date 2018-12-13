@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
@@ -95,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
      * @param answer The string name for the identified object.
      */
     public void comeBackWithInferenceAnswer(String answer) {
-        // TODO Get updating score to NOT crash
         Log.d("Here Be The Answer!", answer);
         //TextView picOf = findViewById(R.id.textPicOf);
         //picOf.setText("Pic seen as:\n" + answer);
@@ -113,8 +113,16 @@ public class MainActivity extends AppCompatActivity {
     private String curItem;
 
     public void updateScore(){
-        TextView scoreText = findViewById(R.id.scoreText);
-        scoreText.setText("SCORE:" + score);
+        Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
+        Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
+            @Override
+            public void run() {
+                TextView scoreText = findViewById(R.id.scoreText);
+                scoreText.setText("SCORE:" + score);
+
+            }
+        };
+        mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
 
     }
     public void nextItem(View v){
