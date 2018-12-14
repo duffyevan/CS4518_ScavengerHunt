@@ -73,4 +73,14 @@
         app:layout_constraintHorizontal_bias="0.52"
         app:layout_constraintStart_toStartOf="@+id/button_Next" />
 
+    <Switch
+        android:id="@+id/inferenceToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="On Device"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </android.support.constraint.ConstraintLayout>

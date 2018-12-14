@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isOnDevice(){
-        return false;
+        return findViewById(R.id.inferenceToggle).isActivated();
     }
 
     @Override
@@ -147,11 +147,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void nextItem(){
-        updateScore();
-        TextView curHunt = findViewById(R.id.curItem);
-        curItem = helper.newHuntItem();
-        curHunt.setText("Current Item:\n" + curItem);
-
+        Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
+        Runnable updateScoreRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateScore();
+                TextView curHunt = findViewById(R.id.curItem);
+                curItem = helper.newHuntItem();
+                curHunt.setText("Current Item:\n" + curItem);
+            }
+        };
+        mainHandler.post(updateScoreRunnable);
     }
 
     public void addToImpossible(View v){
