@@ -13,11 +13,14 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+
+import edu.wpi.cs4518_scavengerhunt.exceptions.TypeError;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,6 +40,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         offDeviceHelper = new MLOffDeviceHelper(this);
+        try {
+            onDeviceHelper = new MLOnDeviceHelper(this, getAssets().openFd(MLHelper.getModelPath()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         Log.d("Random Item:", offDeviceHelper.labels[(int) (Math.random() * 1000)]);
         //takePictureAndStartInference();
 
@@ -94,19 +103,29 @@ public class MainActivity extends AppCompatActivity {
         this.imagePath = absoluteImagePath;
     }
 
+    private boolean isOnDevice(){
+        Switch inferenceToggle = findViewById(R.id.inferenceToggle);
+        return inferenceToggle.isChecked();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != REQUEST_IMAGE_CAPTURE)
             return;
         try {
-            onDeviceHelper = new MLOnDeviceHelper(this, getAssets().openFd(MLHelper.getModelPath()));
-            onDeviceHelper.runImageClassification(Bitmap.createScaledBitmap(
-                    BitmapFactory.decodeFile(imagePath),
-                    onDeviceHelper.SIZE_X,
-                    onDeviceHelper.SIZE_Y,
-                    true));
+            if (isOnDevice()) {
+                onDeviceHelper.runImageClassification(Bitmap.createScaledBitmap(
+                        BitmapFactory.decodeFile(imagePath),
+                        onDeviceHelper.SIZE_X,
+                        onDeviceHelper.SIZE_Y,
+                        true));
+            } else {
+                offDeviceHelper.runImageClassification("image.jpg", new File(imagePath));
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (TypeError typeError) {
+            typeError.printStackTrace();
         }
     }
 
@@ -206,12 +225,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void nextItem() {
-        curItem = helper.newHuntItem();
-        setWrongAnswer("");
-        updateScore();
-        updateSkips();
-        updateItem();
-
+        Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
+        Runnable updateScoreRunnable = new Runnable() {
+            @Override
+            public void run() {
+                curItem = helper.newHuntItem();
+                setWrongAnswer("");
+                updateScore();
+                updateSkips();
+                updateItem();
+            }
+        };
+        mainHandler.post(updateScoreRunnable);
     }
 
     public void addToImpossible(View v) {

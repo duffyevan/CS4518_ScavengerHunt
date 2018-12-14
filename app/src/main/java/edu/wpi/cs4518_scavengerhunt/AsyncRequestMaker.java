@@ -42,11 +42,14 @@ public class AsyncRequestMaker extends AsyncTask<String, Float, String> {
         String result = null;
         try {
             result = r.body().string();
+            result = result.substring(0,result.lastIndexOf(' '));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         final String handoffResult = result;
+        mainActivity.currentInference = handoffResult;
+        mainActivity.comeBackWithInferenceAnswer(handoffResult);
         return result;
     }
 
