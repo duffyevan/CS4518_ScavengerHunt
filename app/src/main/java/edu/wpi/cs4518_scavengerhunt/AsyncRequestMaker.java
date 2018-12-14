@@ -47,6 +47,8 @@ public class AsyncRequestMaker extends AsyncTask<String, Float, String> {
         }
 
         final String handoffResult = result;
+        mainActivity.currentInference = handoffResult;
+        mainActivity.comeBackWithInferenceAnswer(handoffResult);
         return result;
     }
 

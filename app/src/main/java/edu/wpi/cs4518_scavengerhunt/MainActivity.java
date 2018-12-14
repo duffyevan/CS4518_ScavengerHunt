@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import edu.wpi.cs4518_scavengerhunt.exceptions.TypeError;
+
 public class MainActivity extends AppCompatActivity {
 
     protected static int REQUEST_IMAGE_CAPTURE = 1;
@@ -34,6 +36,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         offDeviceHelper = new MLOffDeviceHelper(this);
+        try {
+            onDeviceHelper = new MLOnDeviceHelper(this, getAssets().openFd(MLHelper.getModelPath()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         Log.d("Random Item:", offDeviceHelper.labels[(int) (Math.random() * 1000)]);
         //takePictureAndStartInference();
         helper = new HuntHelper(this);
@@ -73,19 +81,28 @@ public class MainActivity extends AppCompatActivity {
         this.imagePath = absoluteImagePath;
     }
 
+    private boolean isOnDevice(){
+        return false;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != REQUEST_IMAGE_CAPTURE)
             return;
         try {
-            onDeviceHelper = new MLOnDeviceHelper(this, getAssets().openFd(MLHelper.getModelPath()));
-            onDeviceHelper.runImageClassification(Bitmap.createScaledBitmap(
-                    BitmapFactory.decodeFile(imagePath),
-                    onDeviceHelper.SIZE_X,
-                    onDeviceHelper.SIZE_Y,
-                    true));
+            if (isOnDevice()) {
+                onDeviceHelper.runImageClassification(Bitmap.createScaledBitmap(
+                        BitmapFactory.decodeFile(imagePath),
+                        onDeviceHelper.SIZE_X,
+                        onDeviceHelper.SIZE_Y,
+                        true));
+            } else {
+                offDeviceHelper.runImageClassification("image.jpg", new File(imagePath));
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (TypeError typeError) {
+            typeError.printStackTrace();
         }
     }
 
