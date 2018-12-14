@@ -1,6 +1,7 @@
 package edu.wpi.cs4518_scavengerhunt;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -27,7 +28,9 @@ public class MainActivity extends AppCompatActivity {
 
     public String currentInference = "Nothing Yet";
     private HuntHelper helper;
-    private int score = 0, skips = 0;
+    private int score, skips;
+    SharedPreferences sharedPref;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +39,27 @@ public class MainActivity extends AppCompatActivity {
         offDeviceHelper = new MLOffDeviceHelper(this);
         Log.d("Random Item:", offDeviceHelper.labels[(int) (Math.random() * 1000)]);
         //takePictureAndStartInference();
+
+        sharedPref = getPreferences(this.MODE_PRIVATE);
+        sharedPref = this.getPreferences(this.MODE_PRIVATE);
+        sharedPref.getString("key", "");
+        score = sharedPref.getInt("score", 0);
+        skips = sharedPref.getInt("skips", 0);
+
         helper = new HuntHelper(this);
         helper.huntList();
 
+
+        TextView scoreText = findViewById(R.id.scoreText);
+        scoreText.setText("SCORE: " + score);
+        TextView skipText = findViewById(R.id.skipsText);
+        skipText.setText("Skips: " + score);
+
+        /*
+        TextView curHunt = findViewById(R.id.curItem);
+        curItem = "bookcase";
+        curHunt.setText("Current Item:\n" + curItem);
+        */
         nextItem();
     }
 
@@ -96,48 +117,104 @@ public class MainActivity extends AppCompatActivity {
      * @param answer The string name for the identified object.
      */
     public void comeBackWithInferenceAnswer(String answer) {
-        Log.d("Here Be The Answer!", answer);
+        Log.d("Model answer", answer);
         //TextView picOf = findViewById(R.id.textPicOf);
         //picOf.setText("Pic seen as:\n" + answer);
-        if (answer.equals(curItem)){
+        if (answer.equals(curItem)) {
             score += 100;
+            skips += 1;
             nextItem();
-            }
-        else {
-            score -= 50;
+        } else {
+            score -= 25;
             updateScore();
-            nextItem();
-         }
+            setWrongAnswer(answer);
+        }
     }
 
     private String curItem;
 
-    public void updateScore(){
+    public void setWrongAnswer(final String actualAn) {
+        Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
+        Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
+            @Override
+            public void run() {
+                TextView wrongText = findViewById(R.id.wrongAnsText);
+                if (!actualAn.equals("")) {
+                    wrongText.setText("That was a " + actualAn + "!\n -10 penalty");
+                    wrongText.setVisibility(View.VISIBLE);
+                } else {
+                    wrongText.setText("");
+                    wrongText.setVisibility(View.INVISIBLE);
+                }
+            }
+        };
+        mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
+    }
+
+
+    public void updateScore() {
         Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
         Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
             @Override
             public void run() {
                 TextView scoreText = findViewById(R.id.scoreText);
-                scoreText.setText("SCORE:" + score);
+                scoreText.setText("SCORE: " + score);
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putInt("score", score);
+                editor.commit();
 
             }
         };
         mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
-
     }
-    public void nextItem(View v){
+
+    public void updateSkips() {
+        Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
+        Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
+            @Override
+            public void run() {
+                TextView skipsText = findViewById(R.id.skipsText);
+                skipsText.setText("Skips: " + skips);
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putInt("skips", skips);
+                editor.commit();
+            }
+        };
+        mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
+    }
+
+
+    public void updateItem() {
+        Handler mainHandler = new Handler(getApplicationContext().getMainLooper()); // Gives us a handle for running things in the main thread
+        Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
+            @Override
+            public void run() {
+                TextView curHunt = findViewById(R.id.curItem);
+                curHunt.setText("Current Item:\n" + curItem);
+            }
+        };
+        mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
+    }
+
+    public void nextItem(View v) {
+        skips -= 1;
+        if (skips < 0)
+            score += 10 * skips; //actually subtracting
         nextItem();
     }
 
-    public void nextItem(){
-        updateScore();
-        TextView curHunt = findViewById(R.id.curItem);
+    public void nextItem() {
         curItem = helper.newHuntItem();
-        curHunt.setText("Current Item:\n" + curItem);
+        setWrongAnswer("");
+        updateScore();
+        updateSkips();
+        updateItem();
 
     }
 
-    public void addToImpossible(View v){
+    public void addToImpossible(View v) {
         helper.addToImp(curItem);
         nextItem();
 
