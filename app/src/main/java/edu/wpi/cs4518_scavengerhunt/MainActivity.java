@@ -12,6 +12,7 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.io.File;
@@ -82,7 +83,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isOnDevice(){
-        return findViewById(R.id.inferenceToggle).isActivated();
+        Switch inferenceToggle = findViewById(R.id.inferenceToggle);
+        return inferenceToggle.isChecked();
     }
 
     @Override
