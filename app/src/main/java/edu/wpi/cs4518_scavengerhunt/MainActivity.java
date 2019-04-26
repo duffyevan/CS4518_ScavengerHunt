@@ -13,6 +13,8 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private HuntHelper helper;
     private int score, skips;
     SharedPreferences sharedPref;
+    private ImageView runeImageView;
 
 
     @Override
@@ -58,17 +61,14 @@ public class MainActivity extends AppCompatActivity {
         helper = new HuntHelper(this);
         helper.huntList();
 
-
-        TextView scoreText = findViewById(R.id.scoreText);
-        scoreText.setText("SCORE: " + score);
-        TextView skipText = findViewById(R.id.skipsText);
-        skipText.setText("Skips: " + score);
-
         /*
         TextView curHunt = findViewById(R.id.curItem);
         curItem = "bookcase";
         curHunt.setText("Current Item:\n" + curItem);
         */
+
+        runeImageView = findViewById(R.id.runeImageView);
+
         nextItem();
     }
 
@@ -81,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Function to take picture with the device camera, the camera returning will kick off the inference
      */
+
+    private Uri fileUri;
     public void takePictureAndStartInference(View v) {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
@@ -93,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        Uri fileUri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", tempFile);
+        fileUri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", tempFile);
 
         String absoluteImagePath = tempFile.getAbsolutePath();
 
@@ -103,29 +105,22 @@ public class MainActivity extends AppCompatActivity {
         this.imagePath = absoluteImagePath;
     }
 
-    private boolean isOnDevice(){
-        Switch inferenceToggle = findViewById(R.id.inferenceToggle);
-        return inferenceToggle.isChecked();
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != REQUEST_IMAGE_CAPTURE)
             return;
         try {
-            if (isOnDevice()) {
-                onDeviceHelper.runImageClassification(Bitmap.createScaledBitmap(
-                        BitmapFactory.decodeFile(imagePath),
-                        onDeviceHelper.SIZE_X,
-                        onDeviceHelper.SIZE_Y,
-                        true));
-            } else {
-                offDeviceHelper.runImageClassification("image.jpg", new File(imagePath));
-            }
+            onDeviceHelper.runImageClassification(Bitmap.createScaledBitmap(
+                    BitmapFactory.decodeFile(imagePath),
+                    onDeviceHelper.SIZE_X,
+                    onDeviceHelper.SIZE_Y,
+                    true));
+
+            runeImageView.setImageURI(fileUri);
+
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (TypeError typeError) {
-            typeError.printStackTrace();
         }
     }
 
@@ -139,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Model answer", answer);
         //TextView picOf = findViewById(R.id.textPicOf);
         //picOf.setText("Pic seen as:\n" + answer);
+        setWrongAnswer(answer);
         if (answer.equals(curItem)) {
             score += 100;
             skips += 1;
@@ -158,13 +154,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 TextView wrongText = findViewById(R.id.wrongAnsText);
-                if (!actualAn.equals("")) {
-                    wrongText.setText("That was a " + actualAn + "!\n -10 penalty");
-                    wrongText.setVisibility(View.VISIBLE);
-                } else {
-                    wrongText.setText("");
-                    wrongText.setVisibility(View.INVISIBLE);
-                }
+                wrongText.setText("Most Likely: \""  + actualAn + "\"");
             }
         };
         mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
@@ -176,9 +166,6 @@ public class MainActivity extends AppCompatActivity {
         Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
             @Override
             public void run() {
-                TextView scoreText = findViewById(R.id.scoreText);
-                scoreText.setText("SCORE: " + score);
-
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putInt("score", score);
                 editor.commit();
@@ -193,8 +180,6 @@ public class MainActivity extends AppCompatActivity {
         Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
             @Override
             public void run() {
-                TextView skipsText = findViewById(R.id.skipsText);
-                skipsText.setText("Skips: " + skips);
 
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putInt("skips", skips);
@@ -210,8 +195,6 @@ public class MainActivity extends AppCompatActivity {
         Runnable updateScoreRunnable = new Runnable() { // Make the task we need to run
             @Override
             public void run() {
-                TextView curHunt = findViewById(R.id.curItem);
-                curHunt.setText("Current Item:\n" + curItem);
             }
         };
         mainHandler.post(updateScoreRunnable); // Post the task to the main thread for execution
